@@ -5,19 +5,24 @@
 #include "widgets/widgets.hpp"
 
 void UiManager::render() {
-	widgets::begin("##mainwindow", ImVec2(1000, 700));
+	widgets::begin("##mainwindow", ImGui::GetMainViewport()->Size);
 
 	ImVec2 buttons_pos = ImVec2(ImGui::GetWindowWidth() - 20, 10);
 	if (widgets::icon_button("##Exit", ICON_FA_XMARK, buttons_pos))
 		g_running = false;
 
-	// buttons_pos -= ImVec2(20, 0);
-	// if (widgets::icon_button("##Maximize", ICON_FA_WINDOW_MAXIMIZE, buttons_pos))
-	// 	::ShowWindow(g_renderer->m_hwnd, SW_MAXIMIZE);
+	buttons_pos -= ImVec2(20, 0);
+	if (::IsZoomed(g_renderer->m_hwnd)) {
+		if (widgets::icon_button("##Restore", ICON_FA_WINDOW_RESTORE, buttons_pos))
+			::ShowWindow(g_renderer->m_hwnd, SW_RESTORE);
+	} else {
+		if (widgets::icon_button("##Maximize", ICON_FA_WINDOW_MAXIMIZE, buttons_pos))
+			::ShowWindow(g_renderer->m_hwnd, SW_MAXIMIZE);
+	}
 
 	buttons_pos -= ImVec2(20, 2);
 	if (widgets::icon_button("##Minimize", ICON_FA_WINDOW_MINIMIZE, buttons_pos))
-		::ShowWindow(g_renderer->m_hwnd, SW_MINIMIZE);
+		::ShowWindow(g_renderer->m_hwnd, SW_SHOWMINNOACTIVE);
 
 	draw_button_bar();
 

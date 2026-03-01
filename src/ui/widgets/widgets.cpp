@@ -7,13 +7,15 @@
 #include <misc/cpp/imgui_stdlib.h>
 
 namespace widgets {
-	const DWORD window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBackground;
+	const DWORD window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBackground;
 
 	void begin(std::string_view name, ImVec2 size) {
-		ImGui::Begin(name.data(), nullptr, window_flags);
-		ImGui::SetWindowSize(size);
+		ImGui::SetNextWindowPos(ImGui::GetMainViewport()->Pos);
+		ImGui::SetNextWindowSize(size);
 
-		ImGui::GetCurrentWindow()->DrawList->AddRectFilled({0, 0},
+		ImGui::Begin(name.data(), nullptr, window_flags);
+
+		ImGui::GetCurrentWindow()->DrawList->AddRectFilled(ImGui::GetWindowPos(),
 		                                                   ImVec2(size.x - 1, size.y - 1),
 		                                                   Color(25, 25, 25).pack(),
 		                                                   10.f);
@@ -39,16 +41,6 @@ namespace widgets {
 		style.ScrollbarSize                       = 5.f;
 		style.ScrollbarRounding                   = 10;
 		style.ItemSpacing                         = ImVec2(10, 15);
-
-		// move window
-		GetWindowRect(g_renderer->m_hwnd, &g_renderer->rc);
-		MoveWindow(g_renderer->m_hwnd,
-		           g_renderer->rc.left + ImGui::GetWindowPos().x,
-		           g_renderer->rc.top + ImGui::GetWindowPos().y,
-		           1000,
-		           700,
-		           TRUE);
-		ImGui::SetWindowPos(ImVec2(0.f, 0.f));
 	}
 
 	void end() {

@@ -18,17 +18,49 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 
 	switch (msg) {
+	case WM_NCHITTEST:
+	{
+		POINT pt = {static_cast<LONG>(static_cast<short>(LOWORD(lParam))), static_cast<LONG>(static_cast<short>(HIWORD(lParam)))};
+		::ScreenToClient(hWnd, &pt);
+		const int border_width = 8;
+
+		if (pt.y < border_width) {
+			if (pt.x < border_width)
+				return HTTOPLEFT;
+			if (pt.x >= g_renderer->m_width - border_width)
+				return HTTOPRIGHT;
+			return HTTOP;
+		}
+		if (pt.y >= g_renderer->m_height - border_width) {
+			if (pt.x < border_width)
+				return HTBOTTOMLEFT;
+			if (pt.x >= g_renderer->m_width - border_width)
+				return HTBOTTOMRIGHT;
+			return HTBOTTOM;
+		}
+		if (pt.x < border_width)
+			return HTLEFT;
+		if (pt.x >= g_renderer->m_width - border_width)
+			return HTRIGHT;
+
+		if (ImGui::GetCurrentContext() && !ImGui::IsAnyItemHovered() && !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopup))
+			return HTCAPTION;
+
+		return HTCLIENT;
+	}
 	case WM_SIZE:
 		if (wParam == SIZE_MINIMIZED)
 			return 0;
 
-		g_renderer->m_resize_width  = (UINT)LOWORD(lParam);
-		g_renderer->m_resize_height = (UINT)HIWORD(lParam);
+		g_renderer->m_resize_width = g_renderer->m_width = (UINT)LOWORD(lParam);
+		g_renderer->m_resize_height = g_renderer->m_height = (UINT)HIWORD(lParam);
+		g_renderer->renderFrame();
 		return 0;
 	case WM_SYSCOMMAND:
 		if ((wParam & 0xfff0) == SC_KEYMENU)
 			return 0;
 		break;
+	case WM_ERASEBKGND: return 1;
 	case WM_DESTROY: ::PostQuitMessage(0); return 0;
 	}
 	return ::DefWindowProcW(hWnd, msg, wParam, lParam);
@@ -40,16 +72,7 @@ Renderer::Renderer() {
 	m_wc = {sizeof(m_wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), icon, nullptr, nullptr, nullptr, reinterpret_cast<LPCWSTR>("Todo list"), icon};
 	RegisterClassExW(&m_wc);
 
-	int horizontal, vertical;
-	{
-		RECT desktop;
-		const HWND hDesktop = GetDesktopWindow();
-		GetWindowRect(hDesktop, &desktop);
-		horizontal = desktop.right;
-		vertical   = desktop.bottom;
-	}
-
-	m_hwnd = ::CreateWindowW(m_wc.lpszClassName, L"Todo list", WS_POPUP, horizontal / 2 - 500, vertical / 2 - 350, 1000, 700, nullptr, nullptr, m_wc.hInstance, nullptr);
+	m_hwnd = ::CreateWindowW(m_wc.lpszClassName, L"Todo list", WS_POPUP, (GetSystemMetrics(SM_CXSCREEN) - m_width) / 2, (GetSystemMetrics(SM_CYSCREEN) - m_height) / 2, m_width, m_height, nullptr, nullptr, m_wc.hInstance, nullptr);
 
 	SetWindowLongA(m_hwnd, GWL_EXSTYLE, GetWindowLong(m_hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
 	SetLayeredWindowAttributes(m_hwnd, RGB(0, 0, 0), 255, LWA_ALPHA);
@@ -63,7 +86,7 @@ Renderer::Renderer() {
 	if (!createDeviceD3D()) {
 		cleanupDeviceD3D();
 		::UnregisterClassW(m_wc.lpszClassName, m_wc.hInstance);
-		g_renderer = nullptr;
+		g_renderer.reset();
 		throw std::runtime_error("Failed to create device");
 	}
 
@@ -88,11 +111,9 @@ Renderer::Renderer() {
 	                                                       &config,
 	                                                       io.Fonts->GetGlyphRangesDefault());
 
-	{
-		ImFontConfig icons_config;
-		static const ImWchar icons_ranges [] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
-		m_font_awesome = ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(fa6_solid_compressed_data, fa6_solid_compressed_size, 14.f, &icons_config, icons_ranges);
-	}
+	config.FontDataOwnedByAtlas   = true;
+	const ImWchar icons_ranges [] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+	m_font_awesome = ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(fa6_solid_compressed_data, fa6_solid_compressed_size, 14.f, &config, icons_ranges);
 
 	ImGui_ImplWin32_Init(m_hwnd);
 	ImGui_ImplDX11_Init(m_d3d_device.Get(), m_d3d_device_context.Get());
@@ -183,14 +204,23 @@ void Renderer::cleanupRenderTarget() {
 }
 
 bool Renderer::add_dx_callback(dx_callback callback, uint32_t priority) {
-	if (!m_dx_callbacks.insert({priority, callback}).second)
+	auto it = std::lower_bound(m_dx_callbacks.begin(), m_dx_callbacks.end(), priority, [](const auto& pair, uint32_t p) {
+		return pair.first < p;
+	});
+
+	if (it != m_dx_callbacks.end() && it->first == priority)
 		return false;
 
+	m_dx_callbacks.insert(it, {priority, callback});
 	return true;
 }
 
 void Renderer::remove_dx_callback(uint32_t priority) {
-	m_dx_callbacks.erase(priority);
+	auto it = std::lower_bound(m_dx_callbacks.begin(), m_dx_callbacks.end(), priority, [](const auto& pair, uint32_t p) {
+		return pair.first < p;
+	});
+	if (it != m_dx_callbacks.end() && it->first == priority)
+		m_dx_callbacks.erase(it);
 }
 
 void Renderer::add_wndproc_callback(wndproc_callback callback) {
@@ -206,6 +236,18 @@ void Renderer::OnPresent() {
 		if (msg.message == WM_QUIT)
 			g_running = false;
 	}
+
+	renderFrame();
+}
+
+void Renderer::renderFrame() {
+	if (::IsIconic(m_hwnd))
+		return;
+
+	if (m_is_rendering)
+		return;
+
+	m_is_rendering = true;
 
 	if (m_resize_width != 0 && m_resize_height != 0) {
 		cleanupRenderTarget();
@@ -236,6 +278,8 @@ void Renderer::OnPresent() {
 
 	if (m_dxgi_swapchain)
 		m_dxgi_swapchain->Present(1, 0);
+
+	m_is_rendering = false;
 }
 
 void Renderer::wndproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
