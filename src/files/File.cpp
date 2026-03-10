@@ -37,7 +37,7 @@ File File::Move(std::filesystem::path new_path) {
 	return {new_path};
 }
 
-void File::DeleteFile() {
+void File::DelFile() {
 	if (m_file_path.is_relative())
 		m_file_path = m_file_path.parent_path() / m_file_path;
 

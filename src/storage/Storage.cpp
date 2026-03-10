@@ -102,10 +102,11 @@ void Storage::load_list(const std::string& file_name) {
 void Storage::save_settings() {
 	nlohmann::json json;
 
-	json [ "Main Color" ] = g_settings.main_color;
-	json [ "Grey Text" ]  = g_settings.grey_text;
-	json [ "Text Color" ] = g_settings.text_color;
-	json [ "Background Color" ] = g_settings.background_color;
+	json [ "Main Color" ]              = g_settings.main_color;
+	json [ "Grey Text" ]               = g_settings.grey_text;
+	json [ "Text Color" ]              = g_settings.text_color;
+	json [ "Background Color" ]        = g_settings.background_color;
+	json [ "Button Background Color" ] = g_settings.button_background_color;
 
 	const std::filesystem::path file =
 	    g_file_manager.GetProjectFile("settings.json").GetPath();
@@ -129,8 +130,9 @@ void Storage::load_settings() {
 	nlohmann::json json;
 	f >> json;
 
-	g_settings.main_color = json [ "Main Color" ].get<Color>();
-	g_settings.grey_text = json [ "Grey Text" ].get<Color>();
-	g_settings.text_color = json [ "Text Color" ].get<Color>();
+	g_settings.main_color       = json [ "Main Color" ].get<Color>();
+	g_settings.grey_text        = json [ "Grey Text" ].get<Color>();
+	g_settings.text_color       = json [ "Text Color" ].get<Color>();
 	g_settings.background_color = json [ "Background Color" ].get<Color>();
+	g_settings.button_background_color = json [ "Button Background Color" ].get<Color>();
 }

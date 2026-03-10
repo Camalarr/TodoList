@@ -4,16 +4,16 @@ class List;
 
 class Storage {
 public:
-    Storage();
-    ~Storage();
+	Storage();
+	~Storage();
 
-    void save_lists();
-    void save_list(List* list);
-    void load_lists();
-    void load_list(const std::string& file_name);
+	void save_lists();
+	void save_list(List* list);
+	void load_lists();
+	void load_list(const std::string& file_name);
 
-    void save_settings();
-    void load_settings();
+	void save_settings();
+	void load_settings();
 };
 
 inline std::unique_ptr<Storage> g_storage = nullptr;

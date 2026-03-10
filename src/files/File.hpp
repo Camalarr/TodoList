@@ -13,7 +13,7 @@ public:
 	bool Exists() const;
 	const std::filesystem::path GetPath() const;
 	File Move(std::filesystem::path new_path);
-	void DeleteFile();
+	void DelFile();
 
 private:
 	friend class FileManager;

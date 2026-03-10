@@ -15,10 +15,11 @@ namespace widgets {
 
 		ImGui::Begin(name.data(), nullptr, window_flags);
 
-		ImGui::GetCurrentWindow()->DrawList->AddRectFilled(ImGui::GetWindowPos(),
-		                                                   ImVec2(size.x - 1, size.y - 1),
-		                                                   g_settings.background_color.pack(),
-		                                                   10.f);
+		ImGui::GetCurrentWindow()->DrawList->AddRectFilled(
+		    ImGui::GetWindowPos(),
+		    ImVec2(size.x - 1, size.y - 1),
+		    g_settings.background_color.pack(),
+		    10.f);
 
 		// style
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -59,7 +60,6 @@ namespace widgets {
 	bool task(Task* task) {
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
 		List* list          = g_lists_manager->get_selected_list();
-
 
 		if (window->SkipItems)
 			return false;
@@ -103,12 +103,13 @@ namespace widgets {
 		ImGui::PopStyleColor(1);
 		ImGui::PopStyleVar(1);
 
-		Color background = Color(68, 68, 68, 255);
+		Color background = g_settings.button_background_color;
 
 		if (task->is_completed() || pressed || held)
 			background = g_settings.main_color + Color(20, 20, 20);
 		else if (hovered)
 			background = g_settings.main_color - Color(20, 20, 20);
+		background.a = 255;
 
 		if (ImGui::IsItemClicked()) {
 			task->set_value(!task->is_completed());
@@ -168,7 +169,7 @@ namespace widgets {
 
 		bool hovered, held, pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, NULL);
 
-		Color bg_color = Color(125, 125, 125, 0);
+		Color bg_color = g_settings.button_background_color;
 
 		if (held || pressed)
 			bg_color = g_settings.main_color + Color(20, 20, 20);
@@ -266,7 +267,7 @@ namespace widgets {
 				if (button("Delete")) {
 					g_file_manager
 					    .GetProjectFile("Data/" + list->get_name() + ".json")
-					    .DeleteFileA();
+					    .DelFile();
 					g_lists_manager->delete_by_id(list->get_id());
 
 					ImGui::PopStyleVar(2);
@@ -304,7 +305,7 @@ namespace widgets {
 		ImGui::PopStyleColor(1);
 		ImGui::PopStyleVar(1);
 
-		Color bg_color = Color(125, 125, 125, 50);
+		Color bg_color = g_settings.button_background_color;
 
 		if (held || pressed)
 			bg_color = g_settings.main_color + Color(20, 20, 20);
@@ -402,7 +403,7 @@ namespace widgets {
 		ImDrawList* dl        = ImGui::GetWindowDrawList();
 		const ImVec2 box_size = ImVec2(window_size.x / 2, 70);
 		const ImVec2 box_pos  = (window_size / 2) - (box_size / 2);
-		Color background = g_settings.background_color;
+		Color background      = g_settings.background_color;
 
 		dl->AddRectFilled(ImVec2(0, 0), window_size, Color(100, 100, 100, 150).pack());
 

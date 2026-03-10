@@ -1,5 +1,8 @@
 #pragma once
 
+#include "files/FileManager.hpp"
+#include "ui/settings.hpp"
+
 #include <Windows.h>
 #include <algorithm>
 #include <any>
@@ -39,9 +42,6 @@
 #include <variant>
 #include <vector>
 #include <winsock2.h>
-
-#include "files/FileManager.hpp"
-#include "ui/settings.hpp"
 
 using namespace std::chrono_literals;
 

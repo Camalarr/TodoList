@@ -38,10 +38,11 @@ struct Color {
 
 class settings {
 public:
-	Color main_color = Color(161, 209, 177, 255);
-	Color grey_text = Color(220, 220, 220, 255);
-	Color text_color = Color(255, 255, 255, 255);
-	Color background_color = Color(25, 25, 25, 255);
+	Color main_color              = Color(161, 209, 177, 255);
+	Color grey_text               = Color(220, 220, 220, 255);
+	Color text_color              = Color(255, 255, 255, 255);
+	Color background_color        = Color(26, 29, 32, 255);
+	Color button_background_color = Color(56, 59, 62, 50);
 
 	NLOHMANN_DEFINE_TYPE_INTRUSIVE(settings, main_color, grey_text, text_color, background_color)
 };
