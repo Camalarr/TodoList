@@ -5,10 +5,12 @@
 
 Storage::Storage() {
 	load_lists();
+	load_settings();
 }
 
 Storage::~Storage() {
 	save_lists();
+	save_settings();
 }
 
 void Storage::save_lists() {
@@ -95,4 +97,40 @@ void Storage::load_list(const std::string& file_name) {
 	}
 
 	g_lists_manager->add(std::move(list));
+}
+
+void Storage::save_settings() {
+	nlohmann::json json;
+
+	json [ "Main Color" ] = g_settings.main_color;
+	json [ "Grey Text" ]  = g_settings.grey_text;
+	json [ "Text Color" ] = g_settings.text_color;
+	json [ "Background Color" ] = g_settings.background_color;
+
+	const std::filesystem::path file =
+	    g_file_manager.GetProjectFile("settings.json").GetPath();
+
+	std::ofstream(file) << json.dump(4);
+}
+
+void Storage::load_settings() {
+	const std::filesystem::path file =
+	    g_file_manager.GetProjectFile("settings.json").GetPath();
+
+	if (!std::filesystem::exists(file)) {
+		save_settings();
+		return;
+	}
+
+	std::ifstream f(file);
+	if (!f || f.peek() == std::ifstream::traits_type::eof())
+		return;
+
+	nlohmann::json json;
+	f >> json;
+
+	g_settings.main_color = json [ "Main Color" ].get<Color>();
+	g_settings.grey_text = json [ "Grey Text" ].get<Color>();
+	g_settings.text_color = json [ "Text Color" ].get<Color>();
+	g_settings.background_color = json [ "Background Color" ].get<Color>();
 }

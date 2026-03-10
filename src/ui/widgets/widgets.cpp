@@ -17,7 +17,7 @@ namespace widgets {
 
 		ImGui::GetCurrentWindow()->DrawList->AddRectFilled(ImGui::GetWindowPos(),
 		                                                   ImVec2(size.x - 1, size.y - 1),
-		                                                   Color(25, 25, 25).pack(),
+		                                                   g_settings.background_color.pack(),
 		                                                   10.f);
 
 		// style
@@ -31,7 +31,7 @@ namespace widgets {
 		style.FrameRounding               = 10.f;
 		style.WindowPadding               = ImVec2(10, 10);
 		style.Colors [ ImGuiCol_ChildBg ] = Color(0, 0, 0, 0).to_vec4();
-		style.Colors [ ImGuiCol_TextSelectedBg ] = Color(161, 209, 177).to_vec4();
+		style.Colors [ ImGuiCol_TextSelectedBg ] = g_settings.main_color.to_vec4();
 		style.Colors [ ImGuiCol_ResizeGrip ] = Color(0, 0, 0, 0).to_vec4();
 		style.Colors [ ImGuiCol_ResizeGripHovered ] = Color(0, 0, 0, 0).to_vec4();
 		style.Colors [ ImGuiCol_ResizeGripActive ] = Color(0, 0, 0, 0).to_vec4();
@@ -81,7 +81,7 @@ namespace widgets {
 		bool hovered, held, pressed = ImGui::ButtonBehavior(rect, id, &hovered, &held);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 10.f);
-		ImGui::PushStyleColor(ImGuiCol_Border, Color(161, 209, 177).pack());
+		ImGui::PushStyleColor(ImGuiCol_Border, g_settings.main_color.pack());
 		if (begin_popup(task->get_name().c_str())) {
 			if (ImGui::GetCurrentWindow()->BeginCount == 1) {
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(15, 10));
@@ -106,9 +106,9 @@ namespace widgets {
 		Color background = Color(68, 68, 68, 255);
 
 		if (task->is_completed() || pressed || held)
-			background = Color(161, 209, 177, 255);
+			background = g_settings.main_color + Color(20, 20, 20);
 		else if (hovered)
-			background = Color(100, 100, 100, 255);
+			background = g_settings.main_color - Color(20, 20, 20);
 
 		if (ImGui::IsItemClicked()) {
 			task->set_value(!task->is_completed());
@@ -121,7 +121,7 @@ namespace widgets {
 		                                          background.pack(),
 		                                          5.f);
 
-		wrapped_text(rect.Min + ImVec2(50, 0), task->get_name(), Color(255, 255, 255), wrap_width, task->is_completed());
+		wrapped_text(rect.Min + ImVec2(50, 0), task->get_name(), g_settings.text_color, wrap_width, task->is_completed());
 		ImGui::SetWindowFontScale(1.f);
 
 		if (task->is_completed()) {
@@ -171,9 +171,10 @@ namespace widgets {
 		Color bg_color = Color(125, 125, 125, 0);
 
 		if (held || pressed)
-			bg_color = Color(196, 236, 209, 50);
+			bg_color = g_settings.main_color + Color(20, 20, 20);
 		else if (hovered)
-			bg_color = Color(130, 110, 200, 50);
+			bg_color = g_settings.main_color - Color(20, 20, 20);
+		bg_color.a = 50;
 
 		window->DrawList->AddRectFilled(bb.Min - ImVec2(5, 5),
 		                                bb.Max + ImVec2(5, 5),
@@ -181,10 +182,10 @@ namespace widgets {
 		                                10.f);
 		window->DrawList->AddRect(bb.Min - ImVec2(5, 5),
 		                          bb.Max + ImVec2(5, 5),
-		                          Color(161, 209, 177).pack(),
+		                          g_settings.main_color.pack(),
 		                          10.f);
 
-		text(bb.Min - ImVec2(5, 5), bb.Max + ImVec2(5, 5), Color(255, 255, 255), label, ImVec2(0.5f, 0.5f));
+		text(bb.Min - ImVec2(5, 5), bb.Max + ImVec2(5, 5), g_settings.text_color, label, ImVec2(0.5f, 0.5f));
 
 		return pressed;
 	}
@@ -257,7 +258,7 @@ namespace widgets {
 		bool hovered, held, pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, NULL);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding, 10.f);
-		ImGui::PushStyleColor(ImGuiCol_Border, Color(161, 209, 177).pack());
+		ImGui::PushStyleColor(ImGuiCol_Border, g_settings.main_color.pack());
 
 		if (begin_popup(list->get_name().c_str())) {
 			if (ImGui::GetCurrentWindow()->BeginCount == 1) {
@@ -288,7 +289,7 @@ namespace widgets {
 				const std::string task_str = std::format("Tasks : {}/{} - {}%", list->get_completed_tasks(), tasks_size, tasks_size > 0 ? (list->get_completed_tasks() * 100 / tasks_size) : 0);
 
 				ImGui::PushTextWrapPos(300.f);
-				ImGui::PushStyleColor(ImGuiCol_Text, Color(220, 220, 220).pack());
+				ImGui::PushStyleColor(ImGuiCol_Text, g_settings.grey_text.pack());
 
 				ImGui::TextWrapped("%s", list->get_creation_date().c_str());
 				ImGui::TextWrapped("%s", list->get_last_edited().c_str());
@@ -306,24 +307,28 @@ namespace widgets {
 		Color bg_color = Color(125, 125, 125, 50);
 
 		if (held || pressed)
-			bg_color = Color(196, 236, 209, 50);
+			bg_color = g_settings.main_color + Color(20, 20, 20);
 		else if (hovered)
-			bg_color = Color(130, 110, 200, 50);
+			bg_color = g_settings.main_color - Color(20, 20, 20);
+		bg_color.a = 50;
 
 		ImGui::GetWindowDrawList()->AddRectFilled(bb.Min, bb.Max, bg_color.pack(), 10.f);
 
-		ImGui::GetWindowDrawList()->AddRect(bb.Min, bb.Max, Color(161, 209, 177).pack(), 10.f);
+		ImGui::GetWindowDrawList()->AddRect(bb.Min,
+		                                    bb.Max,
+		                                    g_settings.main_color.pack(),
+		                                    10.f);
 
 		const ImVec2 name_size = ImGui::CalcTextSize(list->get_name().c_str(), nullptr, false, bb.GetWidth() - 20.f);
 
 		ImGui::SetWindowFontScale(1.2f);
-		wrapped_text(bb.Min + ImVec2(10, 5), list->get_name(), Color(255, 255, 255), bb.GetWidth() - 30.f);
+		wrapped_text(bb.Min + ImVec2(10, 5), list->get_name(), g_settings.text_color, bb.GetWidth() - 30.f);
 		ImGui::SetWindowFontScale(1.f);
 
 		const ImVec2 description_pos = bb.Min + ImVec2(15, name_size.y + 10.f);
 
 		ImGui::PushFont(g_renderer->m_desc_font);
-		wrapped_text(description_pos, list->get_description(), Color(220, 220, 220), bb.GetWidth() - 30.f);
+		wrapped_text(description_pos, list->get_description(), g_settings.grey_text, bb.GetWidth() - 30.f);
 		ImGui::PopFont();
 
 		if (list->m_need_rename) {
@@ -371,9 +376,9 @@ namespace widgets {
 		ImGui::SetCursorPos(pos);
 		const bool pressed = ImGui::InvisibleButton(label.data(), size);
 
-		Color icon_color = Color(255, 255, 255);
+		Color icon_color = g_settings.text_color;
 		if (ImGui::IsItemHovered())
-			icon_color = Color(161, 209, 177);
+			icon_color = g_settings.main_color;
 
 		const ImVec2 min       = ImGui::GetItemRectMin();
 		const ImVec2 text_size = ImGui::CalcTextSize(icon);
@@ -397,19 +402,22 @@ namespace widgets {
 		ImDrawList* dl        = ImGui::GetWindowDrawList();
 		const ImVec2 box_size = ImVec2(window_size.x / 2, 70);
 		const ImVec2 box_pos  = (window_size / 2) - (box_size / 2);
+		Color background = g_settings.background_color;
 
 		dl->AddRectFilled(ImVec2(0, 0), window_size, Color(100, 100, 100, 150).pack());
 
-		dl->AddRectFilled(box_pos, box_pos + box_size, Color(20, 20, 20).pack(), 10.f);
+		dl->AddRectFilled(box_pos, box_pos + box_size, background.pack(), 10.f);
 
 		ImGui::SetCursorPos(box_pos + ImVec2(10, 5));
 		ImGui::SetWindowFontScale(1.25f);
 		ImGui::Text(name.data());
 
+		background = background + Color(30, 30, 30);
+
 		ImGui::SetCursorPos(box_pos + ImVec2(10, 35));
 		ImGui::PushItemWidth(box_size.x - 20.f);
 		ImGui::PushFont(g_renderer->m_desc_font);
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, Color(45, 45, 45).to_vec4());
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, background.to_vec4());
 		ImGui::PushStyleColor(ImGuiCol_NavHighlight, Color(0, 0, 0, 0).to_vec4());
 
 		ImGui::SetKeyboardFocusHere();

@@ -28,7 +28,7 @@ void UiManager::render() {
 
 	ImGui::GetWindowDrawList()->AddLine(ImVec2(0, ImGui::GetCursorPosY()),
 	                                    ImVec2(ImGui::GetWindowWidth(), ImGui::GetCursorPosY()),
-	                                    Color(161, 209, 177).pack(),
+	                                    g_settings.main_color.pack(),
 	                                    2.f);
 
 	widgets::childBegin(
